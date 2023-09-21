@@ -1,5 +1,4 @@
 /.idea/
 /.pytest_cache/
 /autoApi.iml
-/report/assets/
-/report/report.html
+/report/
