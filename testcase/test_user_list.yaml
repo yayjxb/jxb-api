@@ -1,0 +1,48 @@
+登录 - 不存在的用户:
+  mark: loginSuccess
+  fixture: aa
+  request:
+    url: jshERP-boot/user/login
+    method: POST
+    json:
+      loginName: '123'
+      password: "{{Func.md5('11@11.11')}}"
+  assert:
+    code: 200
+    body:
+      msgTip: 'user is not exist'
+登录 - 密码错误:
+  order: 10
+  request:
+    url: jshERP-boot/user/login
+    method: POST
+    json:
+      loginName: jsh
+      password: "{{Func.md5('123')}}"
+  assert:
+    body:
+      msgTip: 'user password error'
+正确登录:
+  request:
+    url: jshERP-boot/user/login
+    method: POST
+    json:
+      loginName: 'jsh'
+      password: "{{Func.md5('123456')}}"
+  assert:
+    body:
+      loginName: 'jsh'
+  extract:
+    - 'python'
+    - '["data"]["token"]'
+    - token
+  caller:
+    - set_token
+    - global.token
+用户列表:
+  request:
+    url: jshERP-boot/user/getUserList
+    method: GET
+    assert:
+      body:
+        userName: '测试用户'

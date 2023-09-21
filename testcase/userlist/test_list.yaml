@@ -1,0 +1,16 @@
+添加用户 - 邮箱为空:
+  order: 2
+  request:
+    url: jshERP-boot/user/login
+    method: POST
+    headers:
+      cookie:
+    json:
+      loginName: ''
+      password: 11@11.11
+  assert:
+    body:
+      msgTip: 'user is not exist'
+  extract:
+    - '[1]["UserList"][0]["Name"]'
+    - adminName
