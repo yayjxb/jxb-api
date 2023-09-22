@@ -12,6 +12,8 @@ class ReadExcel:
     def read_rows(self, sheet):
         """
         获取sheet页的所有数据
+
+        return: a list of rows [[第一行数据], [第二行数据]]
         """
         ws = self.workbook[sheet]
         rows = ws.max_row
