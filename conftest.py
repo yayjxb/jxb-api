@@ -1,19 +1,11 @@
 import json
 from datetime import datetime
-from operator import methodcaller
-from typing import Optional
 
 import pytest
-from _pytest.compat import NOTSET
-from _pytest.fixtures import FuncFixtureInfo
-from _pytest.hookspec import hookspec
-from _pytest.python import PyobjMixin
 
-import common
 from common.api import api
 from common.base import log
 from common.init import init
-from py.xml import html
 
 
 def pytest_addoption(parser):
@@ -74,8 +66,6 @@ class YamlItem(pytest.Item):
         self.order = order
         self.mark = mark
         self.fix = fix
-        # self.fixturenames = [].append(self.fix)
-        # self._fixtureinfo: FuncFixtureInfo = FuncFixtureInfo((), *self.session._fixturemanager.getfixtureclosure(('aa',), self.parent))
 
     def setup(self) -> None:
         pass
@@ -98,27 +88,6 @@ class YamlItem(pytest.Item):
         return self.path, 0, f"usecase: {self.name}"
 
 
-# 编辑报告标题
-def pytest_html_report_title(report):
-    report.title = "api autotest report"
-
-
-# 编辑摘要信息
-# def pytest_html_results_summary(prefix, summary, postfix):
-#     prefix.extend([html.p("foo: bar")])
-
-
-# 测试结果表格
-def pytest_html_results_table_header(cells):
-    cells.insert(1, html.th("Time", class_="sortable time", col="time"))
-    cells.pop()
-
-
-def pytest_html_results_table_row(report, cells):
-    cells.insert(1, html.td(report.start))
-    cells.pop()
-
-
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_runtest_makereport(item, call):
     # 获取钩子方法的调用结果，返回一个result对象
@@ -137,12 +106,4 @@ def pytest_runtest_makereport(item, call):
 def pytest_runtest_setup(item):
     item.user_properties.append(('start_time', datetime.now()))
 
-
-def pytest_fixture_setup(fixturedef, request):
-    print('22222')
-
-
-@pytest.fixture(scope="function", autouse=True)
-def aa():
-    print('111111')
 
