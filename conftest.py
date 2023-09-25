@@ -77,6 +77,12 @@ class YamlItem(pytest.Item):
         # self.fixturenames = [].append(self.fix)
         # self._fixtureinfo: FuncFixtureInfo = FuncFixtureInfo((), *self.session._fixturemanager.getfixtureclosure(('aa',), self.parent))
 
+    def setup(self) -> None:
+        pass
+
+    def teardown(self) -> None:
+        pass
+
     def runtest(self):
         try:
             api.execute(self.case)
