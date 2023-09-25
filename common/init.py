@@ -9,19 +9,19 @@ from requests import Response
 import settings
 from common.api import Api
 from common.extra import *
-from data.template import DataHandle
+from data.template import DataRender
 
 
 def save_cookie():
     res = login()
-    DataHandle.save_variable(get_dict('cookie', f'Session={res.cookies.values()[0]}'))
+    DataRender.save_variable(get_dict('cookie', f'Session={res.cookies.values()[0]}'))
 
 
 def save_org():
     res = get_org()
     org = json_extract(json.loads(res.text), '$..OrgTree.OrgId')
     print(org)
-    DataHandle.save_variable(get_dict('orgId', org[0]))
+    DataRender.save_variable(get_dict('orgId', org[0]))
 
 
 def login() -> Response:
@@ -47,7 +47,7 @@ def get_org() -> Response:
     data = {
         'url': 'CtAdminOrgDetail',
         'headers': {
-            'cookie': DataHandle.read_variable('cookie')
+            'cookie': DataRender.read_variable('cookie')
         },
         'json': {'OrgId': ''}
     }

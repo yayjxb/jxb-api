@@ -14,22 +14,25 @@ from common.base import log
 from common.extra import get_dict, md5_string
 
 
-class DataHandle:
+class DataRender:
     variable_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'global.json')
 
     @classmethod
-    def render(cls, case_info: dict) -> dict:
+    def render(cls, case_info, render_data=None):
         """
         动态参数替换，将用例中的{{}}中的所有内容进行替换
 
         :param case_info: 用例信息
+        :param render_data:
         :return: 替换后的用例
         """
-        template = jinja2.Template(json.dumps(case_info))
+        template = jinja2.Template(case_info)
         template.globals['Func'] = Func
-        response = template.render(cls.read_variable())
-        results = yaml.safe_load(response)
-        return results
+        if render_data:
+            response = template.render(render_data)
+        else:
+            response = template.render(cls.read_variable())
+        return response
 
     @classmethod
     def save_variable(cls, var: dict):
@@ -65,25 +68,23 @@ class DataHandle:
             log.error('不存在的全局变量：{}', name)
 
     @classmethod
-    def extractor(cls, option='python', path=None, var=None, response=None):
+    def extractor(cls, option='python', path=None, response=None):
         """
         提取器，对响应结果进行提取
 
         :param option: 提取方式，暂时仅支持python 和 jsonpath
         :param path: 提取的表达式
-        :param var: 提取后保存的变量名
         :param response: 响应对象
         :return: 无返回值
         """
-        match option:
-            case 'python':
-                ext = eval(str(response.json()) + path)
-                cls.save_variable(get_dict(var, ext))
-            case 'jsonpath':
-                ext = jsonpath.jsonpath(response.json(), path)
-                cls.save_variable(get_dict(var, ext))
-            case _:
-                print(f'暂不支持的提取方式: {option}')
+        if option == 'python':
+            ext = eval(str(response.json()) + path)
+        elif option == 'jsonpath':
+            ext = jsonpath.jsonpath(response.json(), path)
+        else:
+            ext = None
+            print(f'暂不支持的提取方式: {option}')
+        return ext
 
     @classmethod
     def caller(cls, caller_info):

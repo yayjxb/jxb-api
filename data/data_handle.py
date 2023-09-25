@@ -1,85 +1,108 @@
-import ast
 import json
 import os
 
-from jinja2 import Template
 
-variable_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data/global.json')
-case_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'testcase')
+from common.api import api
+from common.base import get_project_path
+from data.excel_handle import ReadExcel
+from data.template import DataRender
 
-
-def data_render(template: str, data: dict) -> str:
-    """变量替换, 将全局变量中的值替换到测试用例中"""
-    tm = Template(template)
-    new_data = tm.render(data)
-    return new_data
+keyword_file = os.path.join(get_project_path(), 'keywords.xlsx')
+url_file = os.path.join(get_project_path(), 'urls.xlsx')
 
 
-def save_variable(var: dict):
-    try:
-        with open(variable_path, 'r+') as f:
-            date = json.loads(f.read())
-            date.update(var)
-            with open(variable_path, 'w') as f1:
-                f1.write(json.dumps(date, ensure_ascii=False))
-    except FileNotFoundError:
-        with open(variable_path, 'w') as f:
-            f.write(json.dumps(var))
+class DataHandle:
 
+    def __init__(self):
+        self.keyword = ReadExcel(keyword_file)
+        self.url = ReadExcel(url_file)
+        self.render_data = {}
 
-def read_variable(name=None):
-    with open(variable_path, 'r+') as f:
-        if name is None:
-            return json.loads(f.read())
+    def assemble_case(self, all_case):
+        for case in all_case:
+            if case[0] is not None:
+                if case[1].startswith('{{') and case[1].endswith('}}'):
+                    k_msg = self.keyword.get_keywords(case[1][2:-2])
+                    self.handle_keyword(k_msg, case[2])
+                else:
+                    case_info = self.api_data_build(f"{case[1]}({case[2]})", case[3])
+                    resp = api.execute(case_info)
+                    if case_info.get('extract', None):
+                        self.render_data[case_info.get('extract')[-1]] = resp
+
+    def handle_keyword(self, keyword_data, case_data):
+        self.handle_keyword_param(keyword_data[1], case_data)
+        api_data = self.handle_api_extract(*keyword_data[2:4])
+        for req_api in api_data:
+            exec_api = DataRender.render(req_api[0], self.render_data)
+            exec_extract = req_api[1] if len(req_api) > 1 else ''
+            case_info = self.api_data_build(exec_api, exec_extract)
+            resp = api.execute(case_info)
+            if case_info.get('extract', None):
+                self.render_data[case_info.get('extract')[-1]] = resp
+
+    def handle_keyword_param(self, keyword_param: str, case_param):
+        tmp = []
+        case_param = case_param.splitlines() if case_param else []
+        keyword_param = keyword_param.splitlines() if keyword_param else []
+        for i in keyword_param:
+            param = i.split('=')
+            if len(param) == 1:
+                tmp.append([param[0], None])
+            else:
+                tmp.append([param[0], param[1]])
+        for j in case_param:
+            if '=' in j:
+                c_param = j.split('=')
+                for data in tmp:
+                    if data[0] == c_param[0]:
+                        data[1] = c_param[1]
+            else:
+                ind = case_param.index(j)
+                tmp[ind][1] = j
+        for data in tmp:
+            self.render_data[data[0]] = data[1]
+
+    @classmethod
+    def handle_api_extract(cls, api_data, extract):
+        """
+        将api和提取表达式关联
+        """
+        api_data = [[i] for i in api_data.splitlines()]
+        if extract:
+            extract = extract.splitlines()
+            for i, data in enumerate(extract):
+                api_data[i].append(data)
+        return api_data
+
+    def api_data_build(self, api_data, extract):
+        req_data = {'request': {}}
+        api_name = api_data[:api_data.find('(')]
+        extract_name = ''
+        if '=' in api_name:
+            extract_name, api_name = api_name.split('=')
+        api_data = api_data[api_data.find('(')+1:-1].split('::')
+        all_url_data = self.url.get_keywords(api_name)
+        req_data['request']['method'] = all_url_data[1]
+        req_data['request']['url'] = all_url_data[2]
+        op_data = json.loads(all_url_data[3].replace('\n', '').replace(' ', '').replace("'", '"').replace("None", 'null'))
+        if extract:
+            req_data['extract'] = [*extract.split('::'), extract_name]
+        if len(api_data) == 1:
+            if api_data[0] != 'None':
+                op_data.update(json.loads(api_data[0]))
+            if req_data['request']['method'].lower() in ['get', 'delete']:
+                req_data['request']['params'] = op_data
+            else:
+                req_data['request']['json'] = op_data
         else:
-            var = json.loads(f.read())
-            return var[name]
+            if api_data[1] != 'None':
+                op_data.update(json.loads(api_data[1]))
+            req_data['request'][api_data[0].lower()] = op_data
+        return req_data
 
 
-def read_case(file_path):
-    with open(file_path, 'r+') as f:
-        return str(json.loads(f.read()))
-
-
-def get_file():
-    """获取所有测试用例文件"""
-    file_list = []
-    for dirname in os.walk(case_path):
-        for file in dirname[2]:
-            if file.endswith('.json'):
-                file_list.append(os.path.join(dirname[0], file))
-    return file_list
-
-
-def get_request():
-    """获取所有测试用例"""
-    req = []
-    for file in get_file():
-        data = data_render(read_case(file), read_variable())
-        req.append(ast.literal_eval(data))
-    return req
-
-
-def get_data(file=None):
-    """组装所有的测试用例"""
-    result = []
-    if file is None:
-        data = get_request()
-    else:
-        data = ast.literal_eval(data_render(read_case(file), read_variable()))
-        if isinstance(data, list):
-            for j in data:
-                result.append(j)
-        else:
-            result.append(data)
-        return result
-    for i in data:
-        if isinstance(i, list):
-            for j in i:
-                result.append(j)
-        else:
-            result.append(i)
-    return result
-
-
-print(get_data())
+case1 = ReadExcel(os.path.join(get_project_path(), 'demo.xlsx'))
+for sheet in case1.sheets:
+    da = DataHandle()
+    da.assemble_case(case1.read_rows(sheet))

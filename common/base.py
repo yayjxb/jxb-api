@@ -1,70 +1,37 @@
-import json
 import os
 import pymysql
 import sshtunnel
 from loguru import logger
-from requests import Response
 
 import settings
-from common.extra import assert_dict_equal
 
 
-class Assertion:
-
-    @classmethod
-    def assert_method(cls, assertion: dict, response: Response):
-        if assertion:
-            log.info('断言信息: {}', assertion)
-            for method in assertion:
-                try:
-                    getattr(cls, method)(assertion[method], response)
-                except AttributeError:
-                    log.exception('不存在的断言方式: {}', method)
-                    raise
-
-    @staticmethod
-    def code(code, response: Response):
-        try:
-            assert code == response.status_code
-            log.debug('断言成功, 状态码: {}', code)
-        except AssertionError:
-            log.error('断言失败: 期望状态码 {}, 实际状态码 {}', code, response.status_code)
-            raise
-
-    @staticmethod
-    def body(body, response: Response):
-        try:
-            assert assert_dict_equal(response.json(), body)
-            log.debug('断言成功，body：{}', body)
-        except AssertionError:
-            log.error('断言失败: 期望值 {}, 实际值 {}', body, response.json())
-            raise
-
-    @staticmethod
-    def url(url, response: Response):
-        try:
-            assert url in response.url
-            log.debug('断言成功，url：{}', url)
-        except AssertionError:
-            log.error('断言失败: 期望url {}, 实际url {}', url, response.url)
-            raise
-
-    @staticmethod
-    def headers(header, response: Response):
-        try:
-            assert set(header.items()).issubset(response.headers.items())
-            log.debug('断言成功，header：{}', header)
-        except AssertionError:
-            log.error('断言失败: 期望header {}, 实际headers {}', header, response.headers)
-            raise
+def get_project_path(cur_path=None):
+    """
+    获取当
+    """
+    project = settings.PROJECT_NAME
+    if cur_path is None:
+        cur_path = os.getcwd()
+    parent_path = os.path.dirname(cur_path)
+    if cur_path == parent_path:
+        raise AssertionError(log.error(f"未在目录中检索到项目名:{project}"))
+    elif os.path.join(parent_path.lower(), project) in cur_path.lower():
+        root_path = os.path.abspath(cur_path)
+    elif os.path.join(parent_path.upper(), project) in cur_path.upper():
+        root_path = os.path.abspath(cur_path)
+    else:
+        root_path = get_project_path(cur_path=parent_path)
+    return root_path
 
 
 class Log:
     __instance = None
+    log_path = os.path.join(get_project_path(), 'log', 'api.log')
 
-    if not os.path.exists(settings.LOGGING_PATH):
-        open(settings.LOGGING_PATH, 'w').close()
-    logger.add(settings.LOGGING_PATH,  # 指定文件
+    if not os.path.exists(log_path):
+        open(log_path, 'w').close()
+    logger.add(log_path,  # 指定文件
                format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
                encoding='utf-8',
                retention='1 days',  # 设置历史保留时长

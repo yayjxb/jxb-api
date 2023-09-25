@@ -1,12 +1,12 @@
 """
 配置文件
 """
+PROJECT_NAME = 'jxb-api'
 
 # 控制台IP地址和端口
-import os
 
-HOST = '192.168.116.128'
-BASE_URL = 'http://192.168.116.128:3000/'
+HOST = '172.16.10.14'
+BASE_URL = 'https://172.16.10.14:8000/api'
 
 # 超管账号
 ACCOUNT = {
@@ -33,5 +33,3 @@ SSH = {
 # 当前运行环境，'TEST'测试环境，'PRO'线上环境
 ENVIRONMENT = 'TEST'
 
-# 日志配置
-LOGGING_PATH = os.path.dirname(__file__).split('autoApi')[0] + 'autoApi/log/autoApi.log'
