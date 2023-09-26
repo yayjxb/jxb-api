@@ -26,6 +26,7 @@ class DataRender:
         :param render_data:
         :return: 替换后的用例
         """
+        log.debug([case_info])
         template = jinja2.Template(case_info)
         template.globals['Func'] = Func
         if render_data:
