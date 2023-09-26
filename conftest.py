@@ -1,9 +1,5 @@
-import json
-from datetime import datetime
-
 import pytest
 
-from common.api import api
 from common.base import log
 from common.init import init
 
@@ -18,54 +14,29 @@ def pytest_configure(config):
         init()
 
 
-# 收集测试用例、改变用例的执行顺序, 根据用例传入的order参数进行排序, 值越大优先级越高, 给每个用例添加上mark和fixture
-def pytest_collection_modifyitems(items, config):
-    # items是所有的用例列表
-    items.sort(key=lambda item: item.order, reverse=True)
-    for item in items:
-        if item.mark:
-            if isinstance(item.mark, list):
-                for m in item.mark:
-                    item.add_marker(eval(f'pytest.mark.{m}'))
-            else:
-                item.add_marker(eval(f'pytest.mark.{item.mark}'))
-        if item.fix:
-            if isinstance(item.mark, list):
-                for f in item.mark:
-                    item.add_marker(eval(f'pytest.mark.usefixtures("{f}")'))
-            else:
-                item.add_marker(eval(f'pytest.mark.usefixtures("{item.fix}")'))
-
-
 # 修改pytest用例收集规则, 仅收集test开头的.yaml文件
 def pytest_collect_file(parent, file_path):
-    if file_path.suffix == ".yaml" and file_path.name.startswith("test"):
+    if file_path.suffix == ".xlsx" and file_path.name.startswith("test"):
         return YamlFile.from_parent(parent, path=file_path)
 
 
 class YamlFile(pytest.File):
     def collect(self):
         # We need a yaml parser, e.g. PyYAML.
-        import yaml
+        from data.excel_handle import ReadExcel
 
-        raw = yaml.unsafe_load(self.path.open(encoding='utf-8'))
-        for name, case in raw.items():
+        excel_data = ReadExcel(self.path)
+        for name in excel_data.sheets:
             yield YamlItem.from_parent(self,
                                        name=name,
-                                       case=case,
-                                       order=case.get('order', 0),
-                                       mark=case.get('mark', None),
-                                       fix=case.get('fixture', None)
+                                       case=excel_data.read_rows(name)
                                        )
 
 
 class YamlItem(pytest.Item):
-    def __init__(self, *, case, order, mark, fix, **kwargs):
+    def __init__(self, *, case, **kwargs):
         super().__init__(**kwargs)
         self.case = case
-        self.order = order
-        self.mark = mark
-        self.fix = fix
 
     def setup(self) -> None:
         pass
@@ -75,7 +46,10 @@ class YamlItem(pytest.Item):
 
     def runtest(self):
         try:
-            api.execute(self.case)
+            from data.data_handle import DataHandle
+
+            da = DataHandle()
+            da.assemble_case(self.case)
         except Exception:
             raise
 
@@ -86,24 +60,5 @@ class YamlItem(pytest.Item):
 
     def reportinfo(self):
         return self.path, 0, f"usecase: {self.name}"
-
-
-@pytest.hookimpl(hookwrapper=True, tryfirst=True)
-def pytest_runtest_makereport(item, call):
-    # 获取钩子方法的调用结果，返回一个result对象
-    out = yield
-
-    # 从钩子方法的调用结果中获取测试报告
-    report = out.get_result()
-    report.nodeid = report.nodeid.encode("unicode_escape").decode("utf-8")
-    if report.when == 'setup':
-        item.add_report_section('setup', 'stdin', json.dumps(item.case))
-    for i in item.user_properties:
-        if i[0] == 'start_time':
-            report.start = i[1]
-
-
-def pytest_runtest_setup(item):
-    item.user_properties.append(('start_time', datetime.now()))
 
 

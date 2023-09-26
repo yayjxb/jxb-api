@@ -1,14 +1,6 @@
-import json
-import os
-
-
 from common.api import api
-from common.base import get_project_path
-from data.excel_handle import ReadExcel
 from data.template import DataRender
 from keywords import KeyWordOperator
-
-url_file = os.path.join(get_project_path(), 'urls.xlsx')
 
 
 class DataHandle:
@@ -37,9 +29,3 @@ class DataHandle:
                     resp = api.execute(case_name, *case[2:5])
                     if tmp:
                         self.render_data[tmp] = resp
-
-
-case1 = ReadExcel(os.path.join(get_project_path(), 'demo.xlsx'))
-for sheet in case1.sheets:
-    da = DataHandle()
-    da.assemble_case(case1.read_rows(sheet))
