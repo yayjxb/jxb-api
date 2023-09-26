@@ -1,12 +1,14 @@
 import json
+import os
 
 import requests
 from requests import Response
 import settings
 import urllib3
 
-from common.base import log
+from common.base import log, get_project_path
 from common.assertion import Assertion
+from data.excel_handle import ReadExcel
 from data.template import DataRender
 
 
@@ -54,15 +56,42 @@ class Api:
         log.info('响应信息：{}', response.text)
         return response
 
-    def execute(self, case_info):
+    def execute(self, name, data, extract=None, assertion=None):
+        case_info = self.api_data_build(name, data, extract, assertion)
         response = self.request_method(case_info.get('request'))
         Assertion.assert_method(case_info.get('assert', []), response)
         if case_info.get('extract', None):
             log.debug('提取信息：{}', case_info.get('extract'))
-            return DataRender.extractor(*case_info.get('extract')[:-1], response)
+            return DataRender.extractor(*case_info.get('extract'), response)
         if case_info.get('caller', None):
             caller_info = case_info.get('caller')
             DataRender.caller(caller_info)
 
+    def api_data_build(self, name, data, extract, assertion):
+        req_data = {'request': {}}
+        url = ReadExcel(os.path.join(get_project_path(), 'urls.xlsx'))
+        all_url_data = url.get_keywords(name)
+        req_data['request']['method'] = all_url_data[1]
+        req_data['request']['url'] = all_url_data[2]
+        op_data = json.loads(
+            all_url_data[3].replace('\n', '').replace(' ', '').replace("'", '"').replace("None", 'null'))
+        if extract:
+            req_data['extract'] = extract.split('::')
+        if data:
+            api_data = data.split('::')
+            if len(api_data) == 1:
+                if api_data[0] != 'None':
+                    op_data.update(json.loads(api_data[0]))
+                if req_data['request']['method'].lower() in ['get', 'delete']:
+                    req_data['request']['params'] = op_data
+                else:
+                    req_data['request']['json'] = op_data
+            elif len(api_data) == 2:
+                if api_data[1] != 'None':
+                    op_data.update(json.loads(api_data[1]))
+                req_data['request'][api_data[0].lower()] = op_data
+        return req_data
+
 
 api = Api()
+

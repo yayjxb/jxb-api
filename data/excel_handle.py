@@ -30,8 +30,14 @@ class ReadExcel:
 
         return: 如果存在则返回, [关键字名称, 关键字的多个数据]
         """
-        for sheet in self.sheets:
-            excel_data = self.read_rows(sheet)
-            for data in excel_data:
-                if data[0] == keyword:
-                    return data
+        if keyword:
+            for sheet in self.sheets:
+                excel_data = self.read_rows(sheet)
+                for data in excel_data:
+                    if data[0] == keyword:
+                        return data
+
+    def get_keyword_data(self, keyword):
+        if keyword in self.sheets:
+            return self.workbook[keyword]['A2'].value, self.workbook[keyword]['B2'].value, self.read_rows(keyword)[2:]
+
