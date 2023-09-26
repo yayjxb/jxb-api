@@ -40,7 +40,8 @@ class KeyWordOperator:
                 self.render[tmp] = api.execute(name, in_data, req_data[2], req_data[3])
             elif name and not tmp:
                 api.execute(name, in_data, req_data[2], req_data[3])
-        return self.render[self.rename]
+        if self.rename:
+            return self.render[self.rename]
 
     def get_keyword_msg(self, keyword):
         for filename in xlsx_files:

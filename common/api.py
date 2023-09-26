@@ -80,16 +80,27 @@ class Api:
         if data:
             api_data = data.split('::')
             if len(api_data) == 1:
-                if api_data[0] != 'None':
-                    op_data.update(json.loads(api_data[0]))
+                if api_data[0]:
+                    try:
+                        op_data.update(json.loads(api_data[0]))
+                    except json.JSONDecodeError:
+                        raise AssertionError(f'传递的参数格式错误{api_data[0]}')
                 if req_data['request']['method'].lower() in ['get', 'delete']:
                     req_data['request']['params'] = op_data
                 else:
                     req_data['request']['json'] = op_data
             elif len(api_data) == 2:
-                if api_data[1] != 'None':
-                    op_data.update(json.loads(api_data[1]))
+                if api_data[1]:
+                    try:
+                        op_data.update(json.loads(api_data[1]))
+                    except json.JSONDecodeError:
+                        raise AssertionError(f'传递的参数格式错误{api_data[1]}')
                 req_data['request'][api_data[0].lower()] = op_data
+        else:
+            if req_data['request']['method'].lower() in ['get', 'delete']:
+                    req_data['request']['params'] = op_data
+            else:
+                req_data['request']['json'] = op_data
         return req_data
 
 
