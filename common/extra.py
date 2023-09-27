@@ -35,8 +35,12 @@ def assert_dict_equal(old: dict, new: dict, flag=False, ignore_keys=None):
                 return flag
         elif isinstance(old[key], dict):
             flag = assert_dict_equal(old[key], new, flag, ignore_keys)
-        elif isinstance(old[key], list) and len(old[key]) > 1:
+        elif isinstance(old[key], list) and len(old[key]) > 0:
             if isinstance(old[key][0], dict):
                 for dic in old[key]:
                     flag = assert_dict_equal(dic, new, flag, ignore_keys)
     return flag
+
+
+def str_format(strings):
+    return strings.replace('\n', '').replace(' ', '').replace("'", '"').replace("None", 'null').replace('False', 'false').replace('True', 'true')
