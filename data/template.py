@@ -26,13 +26,13 @@ class DataRender:
         :param render_data:
         :return: 替换后的用例
         """
-        log.debug([case_info])
         template = jinja2.Template(case_info)
         template.globals['Func'] = Func
         if render_data:
             response = template.render(render_data)
         else:
             response = template.render(cls.read_variable())
+        log.debug(f'模板替换后的数据: {response}')
         return response
 
     @classmethod
@@ -69,7 +69,7 @@ class DataRender:
             log.error('不存在的全局变量：{}', name)
 
     @classmethod
-    def extractor(cls, option='python', path=None, response=None):
+    def extractor(cls, path=None, option='jsonpath', response=None):
         """
         提取器，对响应结果进行提取
 
@@ -85,6 +85,7 @@ class DataRender:
         else:
             ext = None
             print(f'暂不支持的提取方式: {option}')
+        log.debug(f'提取结果: {ext}')
         return ext
 
     @classmethod
