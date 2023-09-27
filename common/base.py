@@ -29,39 +29,29 @@ class Log:
     __instance = None
     log_path = os.path.join(get_project_path(), 'log', 'api.log')
 
-    if not os.path.exists(log_path):
-        open(log_path, 'w').close()
-    logger.add(log_path,  # 指定文件
-               format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-               encoding='utf-8',
-               retention='1 days',  # 设置历史保留时长
-               backtrace=True,  # 回溯
-               diagnose=True,  # 诊断
-               enqueue=True,  # 异步写入
-               # rotation="5kb",  # 切割，设置文件大小，rotation="12:00"，rotation="1 week"
-               # filter="my_module"  # 过滤模块
-               # compression="zip"   # 文件压缩
-               )
-
     def __new__(cls, *args, **kwargs):
         if not cls.__instance:
             cls.__instance = super(Log, cls).__new__(cls, *args, **kwargs)
         return cls.__instance
 
-    def info(self, msg, *args, **kwargs):
-        return logger.info(msg, *args, **kwargs)
+    def __init__(self):
+        self.log = logger
+        self.init_log()
 
-    def debug(self, msg, *args, **kwargs):
-        return logger.debug(msg, *args, **kwargs)
-
-    def warning(self, msg, *args, **kwargs):
-        return logger.warning(msg, *args, **kwargs)
-
-    def error(self, msg, *args, **kwargs):
-        return logger.error(msg, *args, **kwargs)
-
-    def exception(self, msg, *args, exc_info=True, **kwargs):
-        return logger.exception(msg, *args, exc_info=True, **kwargs)
+    def init_log(self):
+        if not os.path.exists(self.log_path):
+            open(self.log_path, 'w').close()
+        logger.add(self.log_path,  # 指定文件
+                format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+                encoding='utf-8',
+                retention='1 days',  # 设置历史保留时长
+                backtrace=True,  # 回溯
+                diagnose=True,  # 诊断
+                enqueue=True,  # 异步写入
+                # rotation="5kb",  # 切割，设置文件大小，rotation="12:00"，rotation="1 week"
+                # filter="my_module"  # 过滤模块
+                # compression="zip"   # 文件压缩
+                )
 
 
 class MySQL:
@@ -100,4 +90,4 @@ class MySQL:
 
 
 # mysql = MySQL(**settings.MYSQL)
-log = Log()
+log = Log().log
