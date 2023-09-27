@@ -3,6 +3,7 @@ import os
 
 import requests
 from requests import Response
+from common.extra import str_format
 import settings
 import urllib3
 
@@ -50,7 +51,7 @@ class Api:
             verify=False
         )
         if request_option.get("url", '') == '/login':
-            self.set_api_token(DataRender.extractor('jsonpath', "$.data", response)[0])
+            self.set_api_token(DataRender.extractor("$.data", response=response)[0])
         log.info('请求url信息:{}', response.request.url)
         log.info('请求体信息:{}', response.request.body)
         log.info('响应信息：{}', response.text)
@@ -58,31 +59,38 @@ class Api:
 
     def execute(self, name, data, extract=None, assertion=None):
         case_info = self.api_data_build(name, data, extract, assertion)
+        # 未传入接口名称, 处理数据后直接返回
+        if not name:
+            return case_info
         response = self.request_method(case_info.get('request'))
-        Assertion.assert_method(case_info.get('assert', []), response)
+        Assertion.assert_method(case_info.get('assert', {}), response)
         if case_info.get('extract', None):
             log.debug('提取信息：{}', case_info.get('extract'))
-            return DataRender.extractor(*case_info.get('extract'), response)
+            return DataRender.extractor(case_info.get('extract'), response=response)
         if case_info.get('caller', None):
             caller_info = case_info.get('caller')
             DataRender.caller(caller_info)
 
     def api_data_build(self, name, data, extract, assertion):
+        log.debug(f'处理接口数据, 接口名称:{name}, 接口数据:{data}')
         req_data = {'request': {}}
         url = ReadExcel(os.path.join(get_project_path(), 'urls.xlsx'))
-        all_url_data = url.get_keywords(name)
-        req_data['request']['method'] = all_url_data[1]
-        req_data['request']['url'] = all_url_data[2]
-        op_data = json.loads(
-            all_url_data[3].replace('\n', '').replace(' ', '').replace("'", '"').replace("None", 'null'))
+        # 若没有传入接口名称, 认为仅仅做数据处理
+        if name:
+            all_url_data = url.get_keywords(name)
+            req_data['request']['method'] = all_url_data[1]
+            req_data['request']['url'] = all_url_data[2]
+            op_data = json.loads(str_format(all_url_data[3]))
+        else:
+            op_data = json.loads(str_format(data))
         if extract:
-            req_data['extract'] = extract.split('::')
-        if data:
+            req_data['extract'] = extract
+        if data and name:
             api_data = data.split('::')
             if len(api_data) == 1:
                 if api_data[0]:
                     try:
-                        op_data.update(json.loads(api_data[0]))
+                        op_data.update(json.loads(str_format(api_data[0])))
                     except json.JSONDecodeError:
                         raise AssertionError(f'传递的参数格式错误{api_data[0]}')
                 if req_data['request']['method'].lower() in ['get', 'delete']:
@@ -92,15 +100,24 @@ class Api:
             elif len(api_data) == 2:
                 if api_data[1]:
                     try:
-                        op_data.update(json.loads(api_data[1]))
+                        op_data.update(json.loads(str_format(api_data[1])))
                     except json.JSONDecodeError:
                         raise AssertionError(f'传递的参数格式错误{api_data[1]}')
                 req_data['request'][api_data[0].lower()] = op_data
+        # 只有数据没有接口名称, 认为不做接口信息处理, 直接返回数据
+        elif data and not name:
+            return op_data
         else:
             if req_data['request']['method'].lower() in ['get', 'delete']:
                     req_data['request']['params'] = op_data
             else:
                 req_data['request']['json'] = op_data
+        if assertion:
+            req_data['assert'] = {}
+            all_assert_data = assertion.splitlines()
+            for line in all_assert_data:
+                method, expression = line.split('::')
+                req_data['assert'][method] = expression
         return req_data
 
 

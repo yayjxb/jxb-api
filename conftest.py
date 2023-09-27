@@ -60,5 +60,3 @@ class YamlItem(pytest.Item):
 
     def reportinfo(self):
         return self.path, 0, f"usecase: {self.name}"
-
-
