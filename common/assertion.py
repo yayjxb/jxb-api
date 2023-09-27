@@ -1,3 +1,4 @@
+import json
 from requests import Response
 
 from common.base import log
@@ -29,7 +30,7 @@ class Assertion:
     @staticmethod
     def body(body, response: Response):
         try:
-            assert assert_dict_equal(response.json(), body)
+            assert assert_dict_equal(response.json(), json.loads(body))
             log.debug('断言成功，body：{}', body)
         except AssertionError:
             log.error('断言失败: 期望值 {}, 实际值 {}', body, response.json())
