@@ -8,10 +8,9 @@ from operator import methodcaller
 
 import jinja2
 import jsonpath
-import yaml
 
 from common.base import log
-from common.extra import get_dict, md5_string
+from common.extra import md5_string
 
 
 class DataRender:
