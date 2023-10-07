@@ -13,14 +13,13 @@ class DataHandle:
         self.render_data = {}
         self.time_consume = []
 
-    def assemble_case(self, all_case):
-        for case in all_case:
-            if len(case) > 5 and case[5]:
-                for param in case[5].splitlines():
-                    self.parameterize_operators(param)
-                    self.run_case(case)
-            else:
+    def assemble_case(self, case):
+        if len(case) > 5 and case[5]:
+            for param in case[5].splitlines():
+                self.parameterize_operators(param)
                 self.run_case(case)
+        else:
+            self.run_case(case)
 
     def run_case(self, case_info):
         case = copy.deepcopy(case_info)
