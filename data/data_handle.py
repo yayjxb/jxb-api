@@ -42,6 +42,7 @@ class DataHandle:
                         self.render_data[tmp] = keyword_class.handle_keyword(case[2])
                     else:
                         keyword_class.handle_keyword(case[2])
+                    self.time_consume.extend(keyword_class.time_counter)
                 else:
                     resp = api.execute(case_name, *case[2:5])
                     if tmp:

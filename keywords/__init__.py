@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import time
 
 from common.api import api
 from common.base import log, get_project_path
@@ -15,6 +16,7 @@ class KeyWordOperator:
     def __init__(self, keyword):
         self.keyword_name = keyword
         self.api_data = None
+        self.time_counter = []
         # 返回的数据名称
         self.rename = None
         self.param = None
@@ -26,6 +28,7 @@ class KeyWordOperator:
         self.get_keyword_msg(keyword)
 
     def handle_keyword(self, params):
+        start = time.time()
         # 将参数拆分
         self.operate_param(params)
         # 进行关键字的接口调用和数据处理
@@ -47,11 +50,13 @@ class KeyWordOperator:
                 log.info(f'开始调用关键字: {k_name}')
                 self.get_keyword_msg(k_name)
                 self.render[tmp] = self.handle_keyword(in_data)
+                self.keyword_name = k_name
                 continue
             if tmp:
                 self.render[tmp] = api.execute(name, self.request_data_operate(in_data), req_data[2], req_data[3])
             elif name and not tmp:
                 api.execute(name, self.request_data_operate(in_data), req_data[2], req_data[3])
+        self.time_counter.append((f"k_{self.keyword_name}", time.time() - start))
         if self.rename:
             return self.render[self.rename]
 
