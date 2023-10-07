@@ -29,10 +29,9 @@ def assert_dict_equal(old: dict, new: dict, flag=False, ignore_keys=None):
         if key in ignore_keys:
             continue
         if key in new.keys():
-            if new[key] == old[key]:
-                flag = True
-                ignore_keys.append(key)
-                return flag
+            assert new[key] == old[key], f"{key}期望值：{new[key]}, 实际值：{old[key]}"
+            flag = True
+            ignore_keys.append(key)
         elif isinstance(old[key], dict):
             flag = assert_dict_equal(old[key], new, flag, ignore_keys)
         elif isinstance(old[key], list) and len(old[key]) > 0:
