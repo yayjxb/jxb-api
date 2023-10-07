@@ -23,37 +23,40 @@ def pytest_collect_file(parent, file_path):
 
 class YamlFile(pytest.File):
     def collect(self):
-        # We need a yaml parser, e.g. PyYAML.
         from data.excel_handle import ReadExcel
 
         excel_data = ReadExcel(self.path)
         for name in excel_data.sheets:
-            yield YamlItem.from_parent(self,
-                                       name=name,
-                                       case=excel_data.read_rows(name)
-                                       )
+            all_cases = excel_data.read_rows(name)
+            for case in all_cases:
+                yield YamlItem.from_parent(self,
+                                        name=name,
+                                        case=case,
+                                        )
 
 
 class YamlItem(pytest.Item):
     def __init__(self, *, case, **kwargs):
         super().__init__(**kwargs)
         self.case = case
-        self.case_step = [case[0] for case in self.case]
         self.case_obj = DataHandle()
         # 每个用例步骤的时间记录列表, 在每个call阶段之后增加统计数据
         self.time_consumed = self.case_obj.time_consume
 
     def runtest(self):
-        try:
-            self.case_obj.assemble_case(self.case)
-        except Exception:
-            raise
+        self.case_obj.assemble_case(self.case)
 
     def repr_failure(self, excinfo):
         """Called when self.runtest() raises an exception."""
-        if excinfo.type.__name__ != 'AssertionError':
-            log.error(excinfo.traceback)
+        if not isinstance(excinfo.value, AssertionError):
+            return super().repr_failure(excinfo)
         log.error('error: {}, message: {}', excinfo.type, excinfo.value.args)
+        return "\n".join(
+                [
+                    "断言失败",
+                    f"   详细信息: {excinfo.value.args}",
+                ]
+            )
 
     def reportinfo(self):
-        return self.path, 0, f"usecase: {self.name}"
+        return self.path, 0, f"失败的用例: {self.name}, 步骤: {self.case[0]}"
