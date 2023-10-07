@@ -15,7 +15,7 @@ def pytest_configure(config):
         init()
 
 
-# 修改pytest用例收集规则, 仅收集test开头的.yaml文件
+# 修改pytest用例收集规则, 仅收集test开头的.xlsx文件
 def pytest_collect_file(parent, file_path):
     if file_path.suffix == ".xlsx" and file_path.name.startswith("test"):
         return ExcelFile.from_parent(parent, path=file_path)
@@ -26,12 +26,13 @@ class ExcelFile(pytest.File):
         from data.excel_handle import ReadExcel
 
         excel_data = ReadExcel(self.path)
+        # 获取所有的用例信息
         for name in excel_data.sheets:
             all_cases = excel_data.read_rows(name)
             for case in all_cases:
                 yield ExcelItem.from_parent(self,
-                                        name=name,
-                                        case=case,
+                                        name=name,  # 用例名称
+                                        case=case,  # 用例数据
                                         )
 
 
