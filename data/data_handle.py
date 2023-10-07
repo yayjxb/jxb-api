@@ -1,3 +1,5 @@
+import copy
+import json
 import time
 from common.api import api
 from common.base import log
@@ -13,7 +15,16 @@ class DataHandle:
 
     def assemble_case(self, all_case):
         for case in all_case:
-            if case[0] is not None:
+            if len(case) > 5 and case[5]:
+                for param in case[5].splitlines():
+                    self.parameterize_operators(param)
+                    self.run_case(case)
+            else:
+                self.run_case(case)
+
+    def run_case(self, case_info):
+        case = copy.deepcopy(case_info)
+        if case[0] is not None:
                 start = time.time()
                 log.info(f"当前正在执行的步骤: {case[0]}")
                 if case[2]:
@@ -25,11 +36,13 @@ class DataHandle:
                 else:
                     tmp, case_name = case_name
                 if case_name.startswith('{{') and case_name.endswith('}}'):
-                    kwclass = KeyWordOperator(case_name[2:-2])
+                    keyword_name = case_name[2:-2]
+                    keyword_class = KeyWordOperator(keyword_name)
+                    log.info(f'开始调用关键字: {keyword_name}')
                     if tmp:
-                        self.render_data[tmp] = kwclass.handle_keyword(case[2])
+                        self.render_data[tmp] = keyword_class.handle_keyword(case[2])
                     else:
-                        kwclass.handle_keyword(case[2])
+                        keyword_class.handle_keyword(case[2])
                 else:
                     resp = api.execute(case_name, *case[2:5])
                     if tmp:
@@ -37,3 +50,8 @@ class DataHandle:
                 total_time = time.time() - start
                 log.info(f"步骤: {case[0]}, 耗时:{total_time}")
                 self.time_consume.append((case[0], total_time))
+    
+    def parameterize_operators(self, params):
+        log.info(f"参数化数据: {params}")
+        params_dict = json.loads(params)
+        self.render_data.update(params_dict)

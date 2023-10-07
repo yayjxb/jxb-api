@@ -43,7 +43,9 @@ class KeyWordOperator:
                 self.render[self.rename] = in_data
             # 关键字调用关键字
             if name.startswith('{{') and name.endswith('}}'):
-                self.get_keyword_msg(name[2:-2])
+                k_name = name[2:-2]
+                log.info(f'开始调用关键字: {k_name}')
+                self.get_keyword_msg(k_name)
                 self.render[tmp] = self.handle_keyword(in_data)
                 continue
             if tmp:
@@ -68,6 +70,8 @@ class KeyWordOperator:
         keyword_param = self.param.splitlines() if self.param else []
         for i in keyword_param:
             param = i.split('=')
+            if param[0] == '**kwargs':
+                continue
             if len(param) == 1:
                 tmp.append([param[0], None])
             else:
@@ -79,7 +83,6 @@ class KeyWordOperator:
                     if data[0] == c_param[0]:
                         data[1] = c_param[1]
             elif j.startswith('{') and j.endswith('}') :
-                print(j)
                 if '**kwargs' in keyword_param:
                     try:
                         self.kwargs.update(json.loads(j))
@@ -87,6 +90,8 @@ class KeyWordOperator:
                         raise AssertionError(f'参数格式错误{j}')
                 else:
                     log.warning(f'当前关键字{self.keyword_name}不接收可变传参{j}, 不处理')
+            elif j == '**kwargs':
+                continue
             else:
                 ind = case_param.index(j)
                 tmp[ind][1] = j
