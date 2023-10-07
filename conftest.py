@@ -18,10 +18,10 @@ def pytest_configure(config):
 # 修改pytest用例收集规则, 仅收集test开头的.yaml文件
 def pytest_collect_file(parent, file_path):
     if file_path.suffix == ".xlsx" and file_path.name.startswith("test"):
-        return YamlFile.from_parent(parent, path=file_path)
+        return ExcelFile.from_parent(parent, path=file_path)
 
 
-class YamlFile(pytest.File):
+class ExcelFile(pytest.File):
     def collect(self):
         from data.excel_handle import ReadExcel
 
@@ -29,13 +29,13 @@ class YamlFile(pytest.File):
         for name in excel_data.sheets:
             all_cases = excel_data.read_rows(name)
             for case in all_cases:
-                yield YamlItem.from_parent(self,
+                yield ExcelItem.from_parent(self,
                                         name=name,
                                         case=case,
                                         )
 
 
-class YamlItem(pytest.Item):
+class ExcelItem(pytest.Item):
     def __init__(self, *, case, **kwargs):
         super().__init__(**kwargs)
         self.case = case
