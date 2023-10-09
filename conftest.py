@@ -1,15 +1,23 @@
+import time
 import pytest
 
 from common.base import log
+from common.extra import time_format
 from common.init import init
+from common.web_report import WebReport
 from data.data_handle import DataHandle
+import settings
 
 
 def pytest_addoption(parser):
     parser.addoption('--init', action='store', default=False, help='初始化环境选项，默认为否')
+    parser.addoption('--port', action='store', default='18050', help='web报告端口')
 
 
 def pytest_configure(config):
+    config._metadata['开始时间'] = time_format(time.time())
+    config._metadata['项目名称'] = settings.PROJECT_NAME
+    config._metadata['项目环境'] = settings.HOST
     get_init = config.getoption('--init')
     if get_init:
         init()
@@ -49,15 +57,20 @@ class ExcelItem(pytest.Item):
 
     def repr_failure(self, excinfo):
         """Called when self.runtest() raises an exception."""
+        log.error('error: {}, message: {}', excinfo.type, excinfo.value.args)
         if not isinstance(excinfo.value, AssertionError):
             return super().repr_failure(excinfo)
-        log.error('error: {}, message: {}', excinfo.type, excinfo.value.args)
         return "\n".join(
                 [
                     "断言失败",
-                    f"   详细信息: {excinfo.value.args}",
+                    f"   详细信息: {excinfo.value.args[0]}",
                 ]
             )
 
     def reportinfo(self):
         return self.path, 0, f"失败的用例: {self.name}, 步骤: {self.case[0]}"
+
+
+def pytest_unconfigure(config):
+    report = WebReport(config)
+    report.run_server(port=config.getoption('--port'))
