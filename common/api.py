@@ -16,6 +16,7 @@ from data.template import DataRender
 class Api:
     _instance = None
     request_token = None
+    statistics_msg = {}
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
@@ -55,6 +56,7 @@ class Api:
         log.info('请求url信息:{}', response.request.url)
         log.info('请求体信息:{}', response.request.body)
         log.info('响应信息：{}', response.text)
+        log.info('接口耗时: {} s', response.elapsed)
         return response
 
     def execute(self, name, data, extract=None, assertion=None):
@@ -63,7 +65,13 @@ class Api:
         if not name:
             return case_info
         response = self.request_method(case_info.get('request'))
-        Assertion.assert_method(case_info.get('assert', {}), response)
+        url = case_info.get('request')['url'] 
+        self.statistics_msg[url] = {'time_stamp': response.elapsed.total_seconds(), 'isSuccess': True}
+        try:
+            Assertion.assert_method(case_info.get('assert', {}), response)
+        except AssertionError:
+            self.statistics_msg[url]['isSuccess'] = False
+            raise
         if case_info.get('extract', None):
             log.debug('提取信息：{}', case_info.get('extract'))
             return DataRender.extractor(case_info.get('extract'), response=response)
