@@ -1,5 +1,6 @@
 import hashlib
 import os
+import time
 
 import jsonpath
 
@@ -43,3 +44,22 @@ def assert_dict_equal(old: dict, new: dict, flag=False, ignore_keys=None):
 
 def str_format(strings):
     return strings.replace('\n', '').replace(' ', '').replace("'", '"').replace("None", 'null').replace('False', 'false').replace('True', 'true')
+
+
+def time_format(time_stamp):
+    local_time = time.localtime(time_stamp)
+    str_time = time.strftime("%Y-%m-%d %H:%M:%S", local_time)
+    return str_time
+
+
+def check_port(port):
+    if os.name == "nt":
+        # Windows 平台
+        if os.popen(f'netsTAT.EXE -ano | findstr {port} | findstr LISTENING').readline():
+            pid = os.popen(f'netsTAT.EXE -ano | findstr {port} | findstr LISTENING').readline().split(' ')[-1].replace('\n', '')
+            os.popen(f'taskkill /pid {pid} /f')
+    elif os.name == "posix":
+        # Linux 平台
+        if os.popen(f'netstat -nltp| grep {port} |grep LISTEN').readline():
+            pid = os.popen(f'netstat -nltp| grep {port} |grep LISTEN').readline().split(' ')[-1]
+            os.popen(f'kill -9 {pid[:pid.find("/")]}')
