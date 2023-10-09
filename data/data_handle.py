@@ -36,12 +36,12 @@ class DataHandle:
                     tmp, case_name = case_name
                 if case_name.startswith('{{') and case_name.endswith('}}'):
                     keyword_name = case_name[2:-2]
-                    keyword_class = KeyWordOperator(keyword_name)
+                    keyword_class = KeyWordOperator()
                     log.info(f'开始调用关键字: {keyword_name}')
                     if tmp:
-                        self.render_data[tmp] = keyword_class.handle_keyword(case[2])
+                        self.render_data[tmp] = keyword_class.handle_keyword(keyword_name, case[2])
                     else:
-                        keyword_class.handle_keyword(case[2])
+                        keyword_class.handle_keyword(keyword_name, case[2])
                     self.time_consume.extend(keyword_class.time_counter)
                 else:
                     resp = api.execute(case_name, *case[2:5])
