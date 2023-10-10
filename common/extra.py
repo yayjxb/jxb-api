@@ -5,10 +5,6 @@ import time
 import jsonpath
 
 
-def fa_code(code):
-    return os.popen(f'kmg 2fa {code}').readline()
-
-
 def get_dict(name, values):
     return {name: values}
 
