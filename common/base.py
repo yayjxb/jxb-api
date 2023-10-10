@@ -10,7 +10,7 @@ import settings
 
 def get_project_path(cur_path=None):
     """
-    获取当
+    获取当前项目的根路径
     """
     project = settings.PROJECT_NAME
     if cur_path is None:
@@ -29,7 +29,7 @@ def get_project_path(cur_path=None):
 
 class Log:
     __instance = None
-    log_path = Path(os.path.join(get_project_path(), 'log', 'api.log'))
+    log_path = Path(get_project_path()) / 'log' / 'api.log'
 
     def __new__(cls, *args, **kwargs):
         if not cls.__instance:
