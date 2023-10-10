@@ -1,4 +1,6 @@
 import os
+from pathlib import Path
+
 import pymysql
 import sshtunnel
 from loguru import logger
@@ -27,7 +29,7 @@ def get_project_path(cur_path=None):
 
 class Log:
     __instance = None
-    log_path = os.path.join(get_project_path(), 'log', 'api.log')
+    log_path = Path(os.path.join(get_project_path(), 'log', 'api.log'))
 
     def __new__(cls, *args, **kwargs):
         if not cls.__instance:
@@ -39,8 +41,10 @@ class Log:
         self.init_log()
 
     def init_log(self):
-        if not os.path.exists(self.log_path):
-            open(self.log_path, 'w').close()
+        if not self.log_path.exists():
+            if not self.log_path.parent.exists():
+                self.log_path.parent.mkdir()
+            open(self.log_path, 'w+').close()
         logger.add(self.log_path,  # 指定文件
                    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
                    encoding='utf-8',
