@@ -11,7 +11,7 @@ import settings
 
 def pytest_addoption(parser):
     parser.addoption('--init', action='store', default=False, help='初始化环境选项，默认为否')
-    parser.addoption('--port', action='store', default='18050', help='web报告端口')
+    parser.addoption('--port', action='store', default='18050', help='web报告端口', type=int)
 
 
 def pytest_configure(config):

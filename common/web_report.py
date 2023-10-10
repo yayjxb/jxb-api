@@ -1,4 +1,3 @@
-import os
 import dash
 from dash import dash_table, html, dcc
 import plotly.graph_objects as go
@@ -12,7 +11,7 @@ class WebReport:
         self.config = config
         self.api_statistics = api.statistics_msg
 
-    def run_server(self, host='0.0.0.0', port='18050'):
+    def run_server(self, host='0.0.0.0', port=18050):
         app = dash.Dash()
         self.generate_report(app)
         app.title = 'Web Report'
