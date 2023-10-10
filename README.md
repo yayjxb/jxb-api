@@ -95,3 +95,11 @@
 ### 命令行选项
 - `--init` 是否调用初始化函数, 暂无内容
 - `--port` 网页报告的监听端口, 默认18050
+
+## 运行
+```bash
+pip install -r requirements.txt
+```
+```bash
+pytest
+```
