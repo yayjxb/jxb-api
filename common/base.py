@@ -42,16 +42,16 @@ class Log:
         if not os.path.exists(self.log_path):
             open(self.log_path, 'w').close()
         logger.add(self.log_path,  # 指定文件
-                format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-                encoding='utf-8',
-                retention='1 days',  # 设置历史保留时长
-                backtrace=True,  # 回溯
-                diagnose=True,  # 诊断
-                enqueue=True,  # 异步写入
-                # rotation="5kb",  # 切割，设置文件大小，rotation="12:00"，rotation="1 week"
-                # filter="my_module"  # 过滤模块
-                # compression="zip"   # 文件压缩
-                )
+                   format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+                   encoding='utf-8',
+                   retention='1 days',  # 设置历史保留时长
+                   backtrace=True,  # 回溯
+                   diagnose=True,  # 诊断
+                   enqueue=True,  # 异步写入
+                   # rotation="5kb",  # 切割，设置文件大小，rotation="12:00"，rotation="1 week"
+                   # filter="my_module"  # 过滤模块
+                   # compression="zip"   # 文件压缩
+                   )
 
 
 class MySQL:
@@ -86,7 +86,6 @@ class MySQL:
 
     def __del__(self):
         self.cursor.close()
-        # self.server.close()
 
 
 # mysql = MySQL(**settings.MYSQL)
