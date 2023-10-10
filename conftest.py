@@ -39,9 +39,9 @@ class ExcelFile(pytest.File):
             all_cases = excel_data.read_rows(name)
             for case in all_cases:
                 yield ExcelItem.from_parent(self,
-                                        name=name,  # 用例名称
-                                        case=case,  # 用例数据
-                                        )
+                                            name=name,  # 用例名称
+                                            case=case,  # 用例数据
+                                            )
 
 
 class ExcelItem(pytest.Item):
@@ -61,11 +61,11 @@ class ExcelItem(pytest.Item):
         if not isinstance(excinfo.value, AssertionError):
             return super().repr_failure(excinfo)
         return "\n".join(
-                [
-                    "断言失败",
-                    f"   详细信息: {excinfo.value.args[0]}",
-                ]
-            )
+            [
+                "断言失败",
+                f"   详细信息: {excinfo.value.args[0]}",
+            ]
+        )
 
     def reportinfo(self):
         return self.path, 0, f"失败的用例: {self.name}, 步骤: {self.case[0]}"

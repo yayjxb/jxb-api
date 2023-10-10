@@ -65,7 +65,7 @@ class Api:
         if not name:
             return case_info
         response = self.request_method(case_info.get('request'))
-        url = case_info.get('request')['url'] 
+        url = case_info.get('request')['url']
         self.statistics_msg[url] = {'time_stamp': response.elapsed.total_seconds(), 'isSuccess': True}
         try:
             Assertion.assert_method(case_info.get('assert', {}), response)
@@ -117,7 +117,7 @@ class Api:
             return op_data
         else:
             if req_data['request']['method'].lower() in ['get', 'delete']:
-                    req_data['request']['params'] = op_data
+                req_data['request']['params'] = op_data
             else:
                 req_data['request']['json'] = op_data
         if assertion:
@@ -130,4 +130,3 @@ class Api:
 
 
 api = Api()
-

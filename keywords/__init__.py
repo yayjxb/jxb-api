@@ -56,7 +56,7 @@ class KeyWordOperator:
                 api.execute(name, self.request_data_operate(in_data), req_data[2], req_data[3])
         end = time.time()
         log.info(f'关键字: {keyword_name}, 耗时: {end - start}')
-        self.time_counter.append((f"k_{keyword_name}", end  - start))
+        self.time_counter.append((f"k_{keyword_name}", end - start))
         if self.rename:
             return self.render[self.rename]
 
@@ -87,7 +87,7 @@ class KeyWordOperator:
                 for data in tmp:
                     if data[0] == c_param[0]:
                         data[1] = c_param[1]
-            elif j.startswith('{') and j.endswith('}') :
+            elif j.startswith('{') and j.endswith('}'):
                 if '**kwargs' in keyword_param:
                     try:
                         self.kwargs.update(json.loads(j))
@@ -103,12 +103,11 @@ class KeyWordOperator:
         for data in tmp:
             self.render[data[0]] = data[1]
 
-
     def request_data_operate(self, api_data):
         if '**kwargs' in self.param and '**kwargs' in api_data:
             if api_data.startswith('{') and api_data.endswith('}'):
                 return api_data.replace('**kwargs', str(self.kwargs)[1:-1])
             else:
-                 return api_data.replace('**kwargs', str(self.kwargs))
+                return api_data.replace('**kwargs', str(self.kwargs))
         else:
             return api_data
