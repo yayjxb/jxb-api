@@ -53,5 +53,8 @@ class DataHandle:
 
     def parameterize_operators(self, params):
         log.info(f"参数化数据: {params}")
-        params_dict = json.loads(params)
+        try:
+            params_dict = json.loads(params)
+        except json.JSONDecodeError:
+            raise AssertionError(f'参数化数据格式错误{params}')
         self.render_data.update(params_dict)

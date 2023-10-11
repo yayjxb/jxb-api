@@ -84,13 +84,16 @@ class Api:
         req_data = {'request': {}}
         url = ReadExcel(os.path.join(get_project_path(), 'urls.xlsx'))
         # 若没有传入接口名称, 认为仅仅做数据处理
-        if name:
-            all_url_data = url.get_keywords(name)
-            req_data['request']['method'] = all_url_data[1]
-            req_data['request']['url'] = all_url_data[2]
-            op_data = json.loads(str_format(all_url_data[3]))
-        else:
-            op_data = json.loads(str_format(data))
+        try:
+            if name:
+                all_url_data = url.get_keywords(name)
+                req_data['request']['method'] = all_url_data[1]
+                req_data['request']['url'] = all_url_data[2]
+                op_data = json.loads(str_format(all_url_data[3]))
+            else:
+                op_data = json.loads(str_format(data))
+        except json.JSONDecodeError:
+            raise AssertionError(f'传递的接口数据格式错误')
         if extract:
             req_data['extract'] = extract
         if data and name:
