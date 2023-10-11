@@ -16,7 +16,7 @@ from data.template import DataRender
 class Api:
     _instance = None
     request_token = None
-    statistics_msg = {}
+    statistics_msg = []
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
@@ -65,12 +65,12 @@ class Api:
         if not name:
             return case_info
         response = self.request_method(case_info.get('request'))
-        url = case_info.get('request')['url']
-        self.statistics_msg[url] = {'time_stamp': response.elapsed.total_seconds(), 'isSuccess': True}
+        tmp_result = [case_info.get('request')['url'], response.elapsed.total_seconds(), True]
+        self.statistics_msg.append(tmp_result)
         try:
             Assertion.assert_method(case_info.get('assert', {}), response)
         except AssertionError:
-            self.statistics_msg[url]['isSuccess'] = False
+            tmp_result[2] = False
             raise
         if case_info.get('extract', None):
             log.debug('提取信息：{}', case_info.get('extract'))
