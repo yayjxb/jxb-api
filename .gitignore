@@ -2,3 +2,8 @@
 /.pytest_cache/
 /autoApi.iml
 /report/
+/__pycache__
+**/*.pyc
+**/*.log
+/debug/
+/.vscode/
