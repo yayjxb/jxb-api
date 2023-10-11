@@ -85,7 +85,7 @@ class WebReport:
             else:
                 count[i] = 0
             if i in res:
-                res.append(f'{i}({count})' if count[i] != 0 else i)
+                res.append(f'{i}({count[i]})' if count[i] != 0 else i)
             else:
                 res.append(i)
         return res
