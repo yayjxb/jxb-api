@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import sys
 
 import pymysql
 import sshtunnel
@@ -29,7 +30,7 @@ def get_project_path(cur_path=None):
 
 class Log:
     __instance = None
-    log_path = Path(get_project_path()) / 'log' / 'api.log'
+    log_path = Path(get_project_path()) / 'log' / settings.LOG_FILE if settings.LOG_FILE else sys.stdout
 
     def __new__(cls, *args, **kwargs):
         if not cls.__instance:
