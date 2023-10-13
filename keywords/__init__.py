@@ -25,6 +25,7 @@ class KeyWordOperator:
         self.kwargs = {}
 
     def handle_keyword(self, keyword, params):
+        print(f'----------关键字: {keyword}----------')
         start = time.time()
         keyword_name = keyword
         # 获取关键字的数据
@@ -56,7 +57,8 @@ class KeyWordOperator:
                 api.execute(name, self.request_data_operate(in_data), req_data[2], req_data[3])
         end = time.time()
         log.info(f'关键字: {keyword_name}, 耗时: {end - start}')
-        self.time_counter.append((f"k_{keyword_name}", end - start))
+        self.time_counter.append((f"关键字: {keyword_name}", end - start))
+        print(f'----------关键字: {keyword}----------')
         if self.rename:
             return self.render[self.rename]
 
