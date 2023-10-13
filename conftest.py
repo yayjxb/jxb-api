@@ -76,5 +76,4 @@ class ExcelItem(pytest.Item):
 def pytest_runtest_makereport(item):
     outcome = yield
     report = outcome.get_result()
-    if report.when == 'setup':
-        report.name = item.name
+    report.name = item.name
