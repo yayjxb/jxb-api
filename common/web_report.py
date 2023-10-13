@@ -103,16 +103,42 @@ class WebReport:
         return res
     
     def context_log_operator(self, context):
-        """将日志的详细内容的换行符进行处理"""
+        """将日志的详细内容的进行处理"""
         result = []
         if isinstance(context, str):
-            all_logs = context.split('\n')
-            for line in all_logs:
-                result.extend([line, html.Br()])
+            result.extend(self.html_operator(context, '\n'))
+            result = self.html_operator(result, 'INFO')
+            result = self.html_operator(result, 'WARNING')
+            result = self.html_operator(result, 'ERROR')
         else:
             for txt in context:
                 result.extend(self.context_log_operator(txt))
         return html.Div(result)
+    
+    def html_operator(self, context, sign):
+        result = []
+        if isinstance(context, str):
+            all_logs = context.split(sign)
+            if sign == '\n':
+                for line in all_logs:
+                    result.extend([line, html.Br()])
+            elif sign == 'INFO':
+                for line in all_logs:
+                    result.extend([line, html.Span(sign, style={"color": "blue"})])
+            elif sign == 'WARNING':
+                for line in all_logs:
+                    result.extend([line, html.Span(sign, style={"color": "orange"})])
+            elif sign == 'ERROR':
+                for line in all_logs:
+                    result.extend([line, html.Span(sign, style={"color": "red"})])
+            if sign != '\n':
+                result = result[:-1]
+        elif isinstance(context, list):
+            for txt in context:
+                result.extend(self.html_operator(txt, sign))
+        else:
+            result.append(context)
+        return result
     
     def generate_details(self, name, logs, style: dict = None):
         """生成html格式的log日志"""
