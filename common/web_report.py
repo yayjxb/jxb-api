@@ -8,8 +8,12 @@ from common.extra import check_port
 class WebReport:
 
     def __init__(self, config):
+        # Config对象
         self.config = config
+        # api接口统计信息[[接口名称, 耗时, 是否成功], [接口名称, 耗时, 是否成功]]
         self.api_statistics = api.statistics_msg
+        # 日志捕获信息[[用例名, 日志内容], [用例名, 日志内容]]
+        self.capture_log = []
 
     def run_server(self, host='0.0.0.0', port=18050):
         app = dash.Dash()
@@ -23,7 +27,15 @@ class WebReport:
         app.layout = html.Div(children=[
                 self.generate_environment(),
                 dcc.Graph(figure=self.generate_pie()),
-                dcc.Graph(figure=self.generate_bar())
+                dcc.Graph(figure=self.generate_bar()),
+                html.Div(children=["详细日志结果", 
+                    html.P(children=[
+                        # 两个a标签, 展示和隐藏所有log
+                        html.A("Show all logs", href="javascript:document.querySelectorAll(\".log\").forEach((detail) => {detail.open = true;})"), " / ",
+                        html.A("Hide all logs", href="javascript:document.querySelectorAll(\".log\").forEach((detail) => {detail.open = false;})")]),
+                        # 处理log展示
+                        self.log_operator()
+                ])
             ])
 
     def generate_environment(self, name='名称', value='环境配置'):
@@ -90,3 +102,63 @@ class WebReport:
                 res.append(i)
         return res
     
+    def context_log_operator(self, context):
+        """将日志的详细内容的换行符进行处理"""
+        result = []
+        if isinstance(context, str):
+            all_logs = context.split('\n')
+            for line in all_logs:
+                result.extend([line, html.Br()])
+        else:
+            for txt in context:
+                result.extend(self.context_log_operator(txt))
+        return html.Div(result)
+    
+    def generate_details(self, name, logs, style: dict = None):
+        """生成html格式的log日志"""
+        detail_style = {"padding": "0.2em", "word-break": "break-word", "border": "1px solid #e6e6e6", "font": "14px monospace"}
+        if style:
+            detail_style.update(style)
+        children = []
+        all_details = html.Details(children=children, style=detail_style, className="log")
+        children.append(html.Summary(name))
+        k_index = 0
+        for i, log in enumerate(logs):
+            if i == 0:
+                children.append(self.context_log_operator(log))
+            if i > k_index:
+                # 将关键字的日志单独拆分处理, 下一次的日志遍历从关键字后的日志开始
+                if log.startswith("关键字: "):
+                    k_index = logs.index(log, i+1)
+                    children.append(self.generate_details(log, logs[i+1:k_index]))
+                else:
+                    children.append(self.context_log_operator(log))
+        return all_details
+    
+    def log_operator(self):
+        children = []
+        div = html.Div(children=children)
+        for details in self.capture_log:
+            # 将捕获到的日志进行拆分处理
+            name = details[0]
+            log = details[1].split('----------')
+            de = self.generate_details(name, log)
+            children.append(de)
+        return div
+    
+    def record_capstdout(self, report):
+        """将用例对象传递的数据接收存储"""
+        node = report.name
+        if node in [i[0] for i in self.capture_log]:
+            for log in self.capture_log:
+                if log[0] == node:
+                    log[1] += report.capstdout
+        else:
+            self.capture_log.append([node, report.capstdout])
+
+    def pytest_runtest_logreport(self, report):
+        if report.when == 'call':
+            self.record_capstdout(report)
+
+    def pytest_unconfigure(self):
+        self.run_server(port=self.config.getoption('--port'))
