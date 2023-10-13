@@ -42,21 +42,34 @@ class Log:
         self.init_log()
 
     def init_log(self):
+        self.log.remove()
         if not self.log_path.exists():
             if not self.log_path.parent.exists():
                 self.log_path.parent.mkdir()
             open(self.log_path, 'w+').close()
-        logger.add(self.log_path,  # 指定文件
-                   format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-                   encoding='utf-8',
-                   retention='1 days',  # 设置历史保留时长
-                   backtrace=True,  # 回溯
-                   diagnose=True,  # 诊断
-                   enqueue=True,  # 异步写入
-                   # rotation="5kb",  # 切割，设置文件大小，rotation="12:00"，rotation="1 week"
-                   # filter="my_module"  # 过滤模块
-                   # compression="zip"   # 文件压缩
-                   )
+        self.log.add(sys.stdout, 
+            format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <7}</level> | "
+                    "{process.name:<12}| "  # 进程名
+                    "{thread.name:<11}| "  # 线程名
+                    "<cyan>{name}</cyan>.<cyan>{function}</cyan>:<cyan>{line}</cyan> | {message}",
+            # colorize=True,    # 显示颜色
+            # enqueue=True,  # 异步写入
+            )
+        if self.log_path:
+            logger.add(self.log_path,  # 指定文件
+                    format="{time:YYYY-MM-DD HH:mm:ss} | <level>{level: <7}</level> | "
+                            "{process.name:<12}| "  # 进程名
+                            "{thread.name:<11}| "  # 线程名
+                            "<cyan>{name}</cyan>.<cyan>{function}</cyan>:<cyan>{line}</cyan> | {message}",  # 模块名:方法名:行号,
+                    encoding='utf-8',
+                    retention='1 days',  # 设置历史保留时长
+                    backtrace=True,  # 回溯
+                    diagnose=True,  # 诊断
+                    # enqueue=True,  # 异步写入
+                    # rotation="5kb",  # 切割，设置文件大小，rotation="12:00"，rotation="1 week"
+                    # filter="my_module"  # 过滤模块
+                    # compression="zip"   # 文件压缩
+                    )
 
 
 class MySQL:
