@@ -19,6 +19,7 @@ def pytest_configure(config):
     config._metadata['项目名称'] = settings.PROJECT_NAME
     config._metadata['项目环境'] = settings.HOST
     get_init = config.getoption('--init')
+    config.pluginmanager.register(WebReport(config))
     if get_init:
         init()
 
@@ -71,6 +72,9 @@ class ExcelItem(pytest.Item):
         return self.path, 0, f"失败的用例: {self.name}, 步骤: {self.case[0]}"
 
 
-def pytest_unconfigure(config):
-    report = WebReport(config)
-    report.run_server(port=config.getoption('--port'))
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item):
+    outcome = yield
+    report = outcome.get_result()
+    if report.when == 'setup':
+        report.name = item.name
