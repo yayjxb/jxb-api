@@ -113,7 +113,7 @@ class WebReport:
         else:
             for txt in context:
                 result.extend(self.context_log_operator(txt))
-        return html.Div(result)
+        return html.Div(result, style={"white-space": "pre-wrap"})
     
     def html_operator(self, context, sign):
         result = []
