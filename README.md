@@ -65,6 +65,11 @@
 - 用例中可以使用的参数包含所有参数化的内容和返回值
 - **GET和DELETE的默认传参方式是params, POST和PUT的默认传参方式是json**
 - 可以修改默认的传参方式, 使用方式: `data::{"name": {{name}}}` 表示最后使用data的方式传参
+- 支持调用python的函数处理数据, 需要在 `data.template.Func` 类下面定义函数名称和执行的内容
+  - 使用 `{{Func.demo_func("abc")}}` 来进行使用, Func固定写法, `demo_func` 函数名称, 括号里面为传递的参数
+  - 可以使用固定传参 `{{Func.demo_func("abc")}}`
+  - 在用例中, 可以使用参数化中的参数的值, 在关键字中, 可以使用关键字传参的值 `{{Func.demo_func(name="{{name}}")}}`, 若要使用此方式, 需要给函数使用装饰器 `render_func`
+  - 和python调用函数一样, 需要保证传参正确性
 
 ### 关键字调用
 - 当关键字的传参中定义**kwargs时, 表示接收可变传参
