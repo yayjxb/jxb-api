@@ -75,9 +75,6 @@ class Api:
         if case_info.get('extract', None):
             log.debug('提取信息：{}', case_info.get('extract'))
             return DataRender.extractor(case_info.get('extract'), response=response)
-        if case_info.get('caller', None):
-            caller_info = case_info.get('caller')
-            DataRender.caller(caller_info)
 
     def api_data_build(self, name, data, extract, assertion):
         log.debug(f'处理接口数据, 接口名称:{name}, 接口数据:{data}')
