@@ -6,15 +6,14 @@ import json
 import os
 from operator import methodcaller
 
-import jinja2
+from jinja2 import Template
 import jsonpath
 
-from common.base import log
-from common.extra import md5_string
+from common.base import log, get_project_path
 
 
 class DataRender:
-    variable_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'global.json')
+    variable_path = os.path.join(get_project_path(), 'data', 'global.json')
 
     @classmethod
     def render(cls, case_info, render_data=None):
@@ -26,8 +25,8 @@ class DataRender:
         :return: 替换后的用例
         """
         log.debug(f'原始数据: {case_info}')
-        template = jinja2.Template(case_info)
-        template.globals['Func'] = Func
+        template = Template(case_info)
+        template.globals['Func'] = Func(render_data)
         if render_data:
             log.debug(f"模板: {render_data}")
             response = template.render(render_data)
@@ -89,26 +88,31 @@ class DataRender:
         log.debug(f'提取结果: {ext}')
         return ext
 
-    @classmethod
-    def caller(cls, caller_info):
-        new_call_list = [caller_info[0]]
-        for i in caller_info[1:]:
-            if 'global.' in i:
-                name = i.split('.')[1]
-                new_call_list.append(cls.read_variable(name))
+
+def render_func(func):
+    def wrapper(*args, **kwargs):
+        new_data = [args[0]]
+        new_dic = {}
+        for i in args[1:]:
+            if i.startswith('{{') and i.endswith('}}'):
+                new_data.append(DataRender.render(i, args[0].render))
             else:
-                new_call_list.append(i)
-        log.info('自定义函数调用{}', new_call_list)
-        methodcaller(*new_call_list)(Func)
+                new_data.append(i)
+        for k, v in kwargs.items():
+            if v.startswith('{{') and v.endswith('}}'):
+                new_dic[k] = DataRender.render(v, args[0].render)
+            else:
+                new_dic[k] = v
+        return func(*new_data, **new_dic)
+
+    return wrapper
 
 
 class Func:
 
-    @classmethod
-    def md5(cls, string):
-        return md5_string(string)
+    def __init__(self, data):
+        self.render = data
 
-    @classmethod
-    def set_token(cls, token):
-        from common.api import Api
-        Api.set_api_token(token)
+    @render_func
+    def demo_func(self, name):
+        return name

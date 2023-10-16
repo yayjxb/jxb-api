@@ -96,7 +96,7 @@ class KeyWordOperator:
                     except json.JSONDecodeError:
                         raise AssertionError(f'参数格式错误{j}')
                 else:
-                    log.warning(f'当前关键字{self.keyword_name}不接收可变传参{j}, 不处理')
+                    log.warning(f'关键字不接收可变传参{j}, 不处理')
             elif j == '**kwargs':
                 continue
             else:
@@ -104,6 +104,7 @@ class KeyWordOperator:
                 tmp[ind][1] = j
         for data in tmp:
             self.render[data[0]] = data[1]
+        self.render.update(self.kwargs)
 
     def request_data_operate(self, api_data):
         if '**kwargs' in self.param and '**kwargs' in api_data:
