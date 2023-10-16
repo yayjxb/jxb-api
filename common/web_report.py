@@ -83,7 +83,7 @@ class WebReport:
                 values[0] += 1
             else:
                 values[1] += 1
-        fig = go.Figure(data=go.Pie(labels=labels, values=values, marker={'colors': ["green", "red"]}))
+        fig = go.Figure(go.Pie(labels=labels, values=values, marker={'colors': ["green", "red"]}))
         fig.update_layout(title_text='执行情况')
         return fig
     
