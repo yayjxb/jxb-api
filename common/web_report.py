@@ -25,18 +25,27 @@ class WebReport:
     def generate_report(self, app):
         """生成网页布局"""
         app.layout = html.Div(children=[
-                self.generate_environment(),
-                dcc.Graph(figure=self.generate_pie()),
-                dcc.Graph(figure=self.generate_bar()),
-                html.Div(children=["详细日志结果", 
+            self.generate_environment(),
+            dcc.Graph(figure=self.generate_pie()),
+            dcc.Graph(figure=self.generate_bar()),
+            html.Div(
+                children=[
+                    "详细日志结果",
                     html.P(children=[
                         # 两个a标签, 展示和隐藏所有log
-                        html.A("Show all logs", href="javascript:document.querySelectorAll(\".log\").forEach((detail) => {detail.open = true;})"), " / ",
-                        html.A("Hide all logs", href="javascript:document.querySelectorAll(\".log\").forEach((detail) => {detail.open = false;})")]),
-                        # 处理log展示
-                        self.log_operator()
+                        html.A(
+                            "Show all logs",
+                            href="javascript:document.querySelectorAll('.log').forEach((detail)=>{detail.open=true;})"
+                        ),
+                        " / ",
+                        html.A(
+                            "Hide all logs",
+                            href="javascript:document.querySelectorAll('.log').forEach((detail)=>{detail.open=false;})"
+                        )]),
+                    # 处理log展示
+                    self.log_operator()
                 ])
-            ])
+        ])
 
     def generate_environment(self, name='名称', value='环境配置'):
         """表格展示环境配置"""
@@ -45,17 +54,17 @@ class WebReport:
         for k, v in env_data.items():
             result.append({name: k, value: str(v)})
         table = dash_table.DataTable(
-                    data=result,
-                    style_header={
-                        'backgroundColor': '#c8ced7',
-                        'fontWeight': 'bold',
-                    },
-                    style_cell={
-                        'textAlign': 'left'
-                    },
-                )
+            data=result,
+            style_header={
+                'backgroundColor': '#c8ced7',
+                'fontWeight': 'bold',
+            },
+            style_cell={
+                'textAlign': 'left'
+            },
+        )
         return table
-    
+
     def generate_bar(self):
         """横向柱状图, 展示接口耗时"""
         x, y = [], []
@@ -64,16 +73,16 @@ class WebReport:
             x.append(v[1])
         y = self.name_repeat_rename(y)
         fig = go.Figure(go.Bar(
-                x=x,
-                y=y,
-                orientation='h',
-                marker={
-                    "color": "#ff7700",
-                },
-            ))
+            x=x,
+            y=y,
+            orientation='h',
+            marker={
+                "color": "#ff7700",
+            },
+        ))
         fig.update_layout(title_text='接口耗时', barmode='stack', yaxis={'categoryorder': 'total ascending'})
         return fig
-    
+
     def generate_pie(self):
         """饼状图, 统计耗时"""
         labels = ['passed', 'failed']
@@ -86,7 +95,7 @@ class WebReport:
         fig = go.Figure(go.Pie(labels=labels, values=values, marker={'colors': ["green", "red"]}))
         fig.update_layout(title_text='执行情况')
         return fig
-    
+
     def name_repeat_rename(self, li):
         """处理名称重复"""
         count = {}
@@ -101,7 +110,7 @@ class WebReport:
             else:
                 res.append(i)
         return res
-    
+
     def context_log_operator(self, context):
         """将日志的详细内容的进行处理"""
         result = []
@@ -114,7 +123,7 @@ class WebReport:
             for txt in context:
                 result.extend(self.context_log_operator(txt))
         return html.Div(result, style={"white-space": "pre-wrap"})
-    
+
     def html_operator(self, context, sign):
         result = []
         if isinstance(context, str):
@@ -139,10 +148,15 @@ class WebReport:
         else:
             result.append(context)
         return result
-    
+
     def generate_details(self, name, logs, style: dict = None):
         """生成html格式的log日志"""
-        detail_style = {"padding": "0.2em", "word-break": "break-word", "border": "1px solid #e6e6e6", "font": "14px monospace"}
+        detail_style = {
+            "padding": "0.2em",
+            "word-break": "break-word",
+            "border": "1px solid #e6e6e6",
+            "font": "14px monospace"
+        }
         if style:
             detail_style.update(style)
         children = []
@@ -155,12 +169,12 @@ class WebReport:
             if i > k_index:
                 # 将关键字的日志单独拆分处理, 下一次的日志遍历从关键字后的日志开始
                 if log.startswith("关键字: "):
-                    k_index = logs.index(log, i+1)
-                    children.append(self.generate_details(log, logs[i+1:k_index]))
+                    k_index = logs.index(log, i + 1)
+                    children.append(self.generate_details(log, logs[i + 1:k_index]))
                 else:
                     children.append(self.context_log_operator(log))
         return all_details
-    
+
     def log_operator(self):
         children = []
         div = html.Div(children=children)
@@ -171,7 +185,7 @@ class WebReport:
             de = self.generate_details(name, log)
             children.append(de)
         return div
-    
+
     def record_capstdout(self, report):
         """将用例对象传递的数据接收存储"""
         node = report.name
