@@ -51,11 +51,13 @@ def time_format(time_stamp):
 def check_port(port):
     if os.name == "nt":
         # Windows 平台
-        if os.popen(f'netsTAT.EXE -ano | findstr {port} | findstr LISTENING').readline():
-            pid = os.popen(f'netsTAT.EXE -ano | findstr {port} | findstr LISTENING').readline().split(' ')[-1].replace('\n', '')
+        pid = os.popen(f'netsTAT.EXE -ano | findstr {port} | findstr LISTENING').readline()
+        if pid:
+            pid = pid.split(' ')[-1].replace('\n', '')
             os.popen(f'taskkill /pid {pid} /f')
     elif os.name == "posix":
         # Linux 平台
-        if os.popen(f'netstat -nltp| grep {port} |grep LISTEN').readline():
-            pid = os.popen(f'netstat -nltp| grep {port} |grep LISTEN').readline().split(' ')[-1]
+        pid = os.popen(f'netstat -nltp| grep {port} |grep LISTEN').readline()
+        if pid:
+            pid = pid.split(' ')[-1]
             os.popen(f'kill -9 {pid[:pid.find("/")]}')
