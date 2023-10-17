@@ -29,6 +29,7 @@ class WebReport:
         self.history_dir = Path(get_project_path()) / 'history'
 
     def run_server(self, host='0.0.0.0', port=18050):
+        """运行Dash服务"""
         app = dash.Dash()
         app.layout = html.Div([
             dcc.Location(id='url', refresh=False),
@@ -48,7 +49,7 @@ class WebReport:
         app.run(host, port)
 
     def index_page(self):
-        """首页展示历史报告连接"""
+        """首页展示历史报告链接"""
         children = []
         layout = html.Div([
                     html.H2(children='历史报告', id='title'),
@@ -159,6 +160,7 @@ class WebReport:
         return html.Div(result, style={"white-space": "pre-wrap"})
 
     def html_operator(self, context, sign):
+        """将字符串格式的日志, 转换为Dash的html可以直接使用的格式"""
         result = []
         if isinstance(context, str):
             all_logs = context.split(sign)
@@ -210,6 +212,7 @@ class WebReport:
         return all_details
 
     def log_operator(self):
+        """拆分日志"""
         children = []
         div = html.Div(children=children)
         for details in self.all_log:
@@ -231,6 +234,7 @@ class WebReport:
             self.capture_log.append([node, report.capstdout])
 
     def write_file(self, save_file):
+        """将本次测试的所有结果写入到json文件中"""
         all_result = {
             'pass_count': [0, 0],
             'api_name': [],
@@ -248,6 +252,7 @@ class WebReport:
         save_file.write_text(json.dumps(all_result))
 
     def read_file(self, name):
+        """读取文件内容, 加载到类中存储"""
         file_path = self.history_dir / f'{name[1:-1]}.json'
         all_result = json.loads(file_path.read_text())
         self.all_log = all_result['all_log']
@@ -266,20 +271,24 @@ class WebReport:
                 Path(file).unlink()
 
     def get_history_file(self) -> list:
+        """获取所有history文件夹下面的json文件, 并降序返回"""
         history_file = os.path.join(self.history_dir, '*.json')
         file_list = glob.glob(history_file)
         file_list.sort(reverse=True)
         return file_list
 
     def pytest_runtest_logreport(self, report):
+        """pytest钩子函数, 每个步骤自动执行日志的捕获和记录"""
         if report.when == 'call':
             self.record_capstdout(report)
 
     def pytest_sessionfinish(self):
+        """pytest钩子函数, 将本次执行结果记录到文件中保存"""
         save_file = self.history_dir / f'{self.start}.json'
         check_file_exists(save_file)
         self.write_file(save_file)
         self.check_file_number()
 
     def pytest_unconfigure(self):
+        """pytest钩子函数, 最后执行, 启动http网页报告"""
         self.run_server(port=self.config.getoption('--port'))
