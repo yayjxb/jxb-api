@@ -19,7 +19,9 @@ def pytest_configure(config):
     config._metadata['项目名称'] = settings.PROJECT_NAME
     config._metadata['项目环境'] = settings.HOST
     get_init = config.getoption('--init')
-    config.pluginmanager.register(WebReport(config))
+    config._webreport = WebReport(config)
+    config._webreport.start = config._metadata['开始时间'].replace(' ', '-').replace(':', '')
+    config.pluginmanager.register(config._webreport)
     if get_init:
         init()
 
