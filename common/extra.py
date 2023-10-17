@@ -1,6 +1,7 @@
 import hashlib
 import os
 import time
+from pathlib import Path
 
 import jsonpath
 
@@ -61,3 +62,10 @@ def check_port(port):
         if pid:
             pid = pid.split(' ')[-1]
             os.popen(f'kill -9 {pid[:pid.find("/")]}')
+
+
+def check_file_exists(file: Path):
+    if not file.exists():
+        if not file.parent.exists():
+            file.parent.mkdir()
+        open(file, 'w+').close()
