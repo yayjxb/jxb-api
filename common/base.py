@@ -7,6 +7,7 @@ import sshtunnel
 from loguru import logger
 
 import settings
+from common.extra import check_file_exists
 
 
 def get_project_path(cur_path=None):
@@ -43,10 +44,7 @@ class Log:
 
     def init_log(self):
         self.log.remove()
-        if not self.log_path.exists():
-            if not self.log_path.parent.exists():
-                self.log_path.parent.mkdir()
-            open(self.log_path, 'w+').close()
+        check_file_exists(self.log_path)
         self.log.add(sys.stdout,
                      format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <7}</level> | "
                             "{process.name:<12}| "  # 进程名

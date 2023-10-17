@@ -8,7 +8,7 @@ from dash import dash_table, html, dcc, Output, Input
 import plotly.graph_objects as go
 from common.api import api
 from common.base import get_project_path
-from common.extra import check_port
+from common.extra import check_port, check_file_exists
 
 
 class WebReport:
@@ -277,10 +277,7 @@ class WebReport:
 
     def pytest_sessionfinish(self):
         save_file = self.history_dir / f'{self.start}.json'
-        if not save_file.exists():
-            if not save_file.parent.exists():
-                save_file.parent.mkdir()
-            open(save_file, 'w+').close()
+        check_file_exists(save_file)
         self.write_file(save_file)
         self.check_file_number()
 
