@@ -1,30 +1,72 @@
+import glob
+import json
+import os
+from pathlib import Path
+
 import dash
-from dash import dash_table, html, dcc
+from dash import dash_table, html, dcc, Output, Input
 import plotly.graph_objects as go
 from common.api import api
+from common.base import get_project_path
 from common.extra import check_port
 
 
 class WebReport:
 
     def __init__(self, config):
+        self.metadata = None
+        self.all_log = None
+        self.pass_count = None
+        self.api_time = None
+        self.api_name = None
         # Config对象
         self.config = config
         # api接口统计信息[[接口名称, 耗时, 是否成功], [接口名称, 耗时, 是否成功]]
         self.api_statistics = api.statistics_msg
         # 日志捕获信息[[用例名, 日志内容], [用例名, 日志内容]]
         self.capture_log = []
+        self.start: str = ''
+        self.history_dir = Path(get_project_path()) / 'history'
 
     def run_server(self, host='0.0.0.0', port=18050):
         app = dash.Dash()
-        self.generate_report(app)
+        app.layout = html.Div([
+            dcc.Location(id='url', refresh=False),
+            html.Div(id='page-content'),
+        ])
         app.title = 'Web Report'
+
+        # 回调函数, 根据url渲染html内容
+        @app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
+        def display_page(pathname):
+            if pathname == '/':
+                return self.index_page()
+            else:
+                return self.generate_report(pathname)
+
         check_port(port)
         app.run(host, port)
 
-    def generate_report(self, app):
+    def index_page(self):
+        """首页展示历史报告连接"""
+        children = []
+        layout = html.Div([
+                    html.H2(children='历史报告', id='title'),
+                    html.Ul(children),
+                ])
+        file_list = self.get_history_file()
+        # 展示前五次, 需要多展示修改遍历次数即可
+        for file in file_list[:5]:
+            name = Path(file).name.split('.')[0]
+            children.append(
+                        html.Li(html.A(name, href=f'{name}/'))
+                      )
+        return layout
+
+    def generate_report(self, name):
         """生成网页布局"""
-        app.layout = html.Div(children=[
+        self.read_file(name)
+        layout = html.Div(children=[
             self.generate_environment(),
             dcc.Graph(figure=self.generate_pie()),
             dcc.Graph(figure=self.generate_bar()),
@@ -46,12 +88,12 @@ class WebReport:
                     self.log_operator()
                 ])
         ])
+        return layout
 
     def generate_environment(self, name='名称', value='环境配置'):
         """表格展示环境配置"""
-        env_data = self.config._metadata
         result = []
-        for k, v in env_data.items():
+        for k, v in self.metadata.items():
             result.append({name: k, value: str(v)})
         table = dash_table.DataTable(
             data=result,
@@ -67,11 +109,8 @@ class WebReport:
 
     def generate_bar(self):
         """横向柱状图, 展示接口耗时"""
-        x, y = [], []
-        for v in self.api_statistics:
-            y.append(v[0])
-            x.append(v[1])
-        y = self.name_repeat_rename(y)
+        x = self.api_time
+        y = self.name_repeat_rename(self.api_name)
         fig = go.Figure(go.Bar(
             x=x,
             y=y,
@@ -86,12 +125,7 @@ class WebReport:
     def generate_pie(self):
         """饼状图, 统计耗时"""
         labels = ['passed', 'failed']
-        values = [0, 0]
-        for v in self.api_statistics:
-            if v[2]:
-                values[0] += 1
-            else:
-                values[1] += 1
+        values = self.pass_count
         fig = go.Figure(go.Pie(labels=labels, values=values, marker={'colors': ["green", "red"]}))
         fig.update_layout(title_text='执行情况')
         return fig
@@ -178,7 +212,7 @@ class WebReport:
     def log_operator(self):
         children = []
         div = html.Div(children=children)
-        for details in self.capture_log:
+        for details in self.all_log:
             # 将捕获到的日志进行拆分处理
             name = details[0]
             log = details[1].split('----------')
@@ -196,9 +230,59 @@ class WebReport:
         else:
             self.capture_log.append([node, report.capstdout])
 
+    def write_file(self, save_file):
+        all_result = {
+            'pass_count': [0, 0],
+            'api_name': [],
+            'api_time': [],
+            'all_log': self.capture_log,
+            'metadata': self.config._metadata
+        }
+        for v in self.api_statistics:
+            all_result['api_name'].append(v[0])
+            all_result['api_time'].append(v[1])
+            if v[2]:
+                all_result['pass_count'][0] += 1
+            else:
+                all_result['pass_count'][1] += 1
+        save_file.write_text(json.dumps(all_result))
+
+    def read_file(self, name):
+        file_path = self.history_dir / f'{name[1:-1]}.json'
+        all_result = json.loads(file_path.read_text())
+        self.all_log = all_result['all_log']
+        self.api_name = all_result['api_name']
+        self.api_time = all_result['api_time']
+        self.pass_count = all_result['pass_count']
+        self.metadata = all_result['metadata']
+
+    def check_file_number(self):
+        """检查历史报告文件数量, 超过指定数量则删除文件"""
+        file_list = self.get_history_file()
+        file_list.sort(reverse=True)
+        # 超过10个文件, 则删除最老的历史记录
+        if len(file_list) > 10:
+            for file in file_list[10:]:
+                Path(file).unlink()
+
+    def get_history_file(self) -> list:
+        history_file = os.path.join(self.history_dir, '*.json')
+        file_list = glob.glob(history_file)
+        file_list.sort(reverse=True)
+        return file_list
+
     def pytest_runtest_logreport(self, report):
         if report.when == 'call':
             self.record_capstdout(report)
+
+    def pytest_sessionfinish(self):
+        save_file = self.history_dir / f'{self.start}.json'
+        if not save_file.exists():
+            if not save_file.parent.exists():
+                save_file.parent.mkdir()
+            open(save_file, 'w+').close()
+        self.write_file(save_file)
+        self.check_file_number()
 
     def pytest_unconfigure(self):
         self.run_server(port=self.config.getoption('--port'))
