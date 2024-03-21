@@ -33,6 +33,7 @@ class Api:
 
     def get_headers(self, headers):
         header = {'Authorization': self.request_token}
+        header.update(settings.HEADERS)
         if headers:
             header.update(headers)
         return header
@@ -59,8 +60,8 @@ class Api:
         log.info('接口耗时: {} s', response.elapsed)
         return response
 
-    def execute(self, name, data, extract=None, assertion=None):
-        case_info = self.api_data_build(name, data, extract, assertion)
+    def execute(self, name, data, extract=None, assertion=None, headers=None):
+        case_info = self.api_data_build(name, data, extract, assertion, headers)
         # 未传入接口名称, 处理数据后直接返回
         if not name:
             return case_info
@@ -76,9 +77,16 @@ class Api:
             log.debug('提取信息：{}', case_info.get('extract'))
             return DataRender.extractor(case_info.get('extract'), response=response)
 
-    def api_data_build(self, name, data, extract, assertion):
+    def api_data_build(self, name, data, extract, assertion, headers: str):
         log.debug(f'处理接口数据, 接口名称:{name}, 接口数据:{data}')
-        req_data = {'request': {}}
+        h_headers = {}
+        # 处理请求头
+        if headers:
+            headers = headers.split()
+            for header in headers:
+                k, v = header.split('=')
+                h_headers[k.strip()] = v.strip()
+        req_data = {'request': {'headers': {h_headers}}}
         url = ReadExcel(os.path.join(get_project_path(), 'urls.xlsx'))
         # 若没有传入接口名称, 认为仅仅做数据处理
         try:

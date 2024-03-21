@@ -52,9 +52,9 @@ class KeyWordOperator:
                 self.render[tmp] = self.handle_keyword(k_name, in_data)
                 continue
             if tmp:
-                self.render[tmp] = api.execute(name, self.request_data_operate(in_data), req_data[2], req_data[3])
+                self.render[tmp] = api.execute(name, self.request_data_operate(in_data), *req_data[2:5])
             elif name and not tmp:
-                api.execute(name, self.request_data_operate(in_data), req_data[2], req_data[3])
+                api.execute(name, self.request_data_operate(in_data), *req_data[2:5])
         end = time.time()
         log.info(f'关键字: {keyword_name}, 耗时: {end - start}')
         self.time_counter.append((f"关键字: {keyword_name}", end - start))
